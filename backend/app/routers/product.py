@@ -15,18 +15,14 @@ from app.crud import product_crud
 router = APIRouter()
 
 @router.post("/products/", response_model=ProductOut)
-async def create_product(
-    product_in: ProductCreate,
-    db: AsyncSession = Depends(get_db)
-):
-
+async def create_product( product_in: ProductCreate, db: AsyncSession = Depends(get_db)) -> Product:
     existing = await product_crud.get_product(product_in.sku, db) 
     if existing:
         raise HTTPException(status_code=400, detail="SKU уже существует")
     return await product_crud.create_product(product_in, db)
 
 @router.get("/products/{sku}", response_model=ProductOut)
-async def read_product(sku: str, db: AsyncSession = Depends(get_db)):
+async def read_product(sku: str, db: AsyncSession = Depends(get_db)) -> Product:
     product = await product_crud.get_product(sku, db)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")

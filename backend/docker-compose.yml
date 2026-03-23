@@ -1,0 +1,82 @@
+# Версия синтаксиса (3.8 = Docker 19.03+)
+
+services:
+  # =========================================
+  # PostgreSQL (база данных)
+  # =========================================
+  postgres:
+    # Легкий alpine образ
+    image: postgres:16-alpine
+    container_name: mkpstats_postgres
+
+    # Переменные окружения БД
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    # Проброс порта на хост
+    ports:
+      - "5432:5432"
+
+    # Том для БД (данные НЕ удаляются при docker-compose down)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    # Healthcheck: проверяет готовность БД
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mkpstats"]
+      interval: 10s   # Каждые 10 сек
+      timeout: 5s     # Таймаут 5 сек
+      retries: 5      # 5 попыток
+
+    # Авторестарт при сбоях
+    restart: unless-stopped
+
+  # =========================================
+  # FastAPI приложение
+  # =========================================
+
+  fastapi:
+    # Собираем из Dockerfile в текущей папке
+    build:
+      context: . # backend/
+      dockerfile: Dockerfile
+
+    container_name: mkpstats_fastapi
+
+    # Проброс порта API
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - .env
+     # Переменные для Alembic/FastAPI
+    environment:
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
+      DATABASE_URL_ASYNC: ${DATABASE_URL}
+
+    # Hot reload: изменения кода → перезапуск
+    volumes:
+      - .:/app
+
+    # Ждем postgres (healthcheck прошел)
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    # Команда запуска (переопределяем CMD из Dockerfile)
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+    restart: unless-stopped
+
+
+
+# =========================================
+# Persistent storage
+# =========================================
+volumes:
+  postgres_data:     # Имя тома (docker volume ls)

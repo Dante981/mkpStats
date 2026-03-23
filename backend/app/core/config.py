@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # URL подключения к PostgreSQL с asyncpg драйвером
     DATABASE_URL: str
     DATABASE_URL_SYNC: str
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
     # URL Redis брокера для Celery
     REDIS_URL: str
     DEBUG: bool
