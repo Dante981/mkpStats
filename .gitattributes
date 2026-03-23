@@ -1,0 +1,20 @@
+# Нормализовать окончания строк для текстовых файлов
+* text=auto
+
+
+# Явно указать LF для Python‑файлов и конфигураций
+*.py text eol=lf
+*.ini text eol=lf
+*.mako text eol=lf
+*.sh text eol=lf
+
+
+# Бинарные файлы — не трогать
+*.png binary
+*.jpg binary
+*.zip binary
+
+
+# Docker‑файлы — LF
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
