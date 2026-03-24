@@ -9,6 +9,7 @@ from app.api.deps import get_db
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductOut
 from app.crud import product_crud
+from typing import List
 
 
 
@@ -27,3 +28,8 @@ async def read_product(sku: str, db: AsyncSession = Depends(get_db)) -> Product:
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
+@router.get("/products/", response_model=List[ProductOut])
+async def read_all_products(db: AsyncSession = Depends(get_db)) -> List[Product]:
+    products = await product_crud.get_all_products(db)
+    return products

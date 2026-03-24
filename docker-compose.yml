@@ -1,5 +1,3 @@
-# Версия синтаксиса (3.8 = Docker 19.03+)
-
 services:
   # =========================================
   # PostgreSQL (база данных)
@@ -10,8 +8,7 @@ services:
     container_name: mkpstats_postgres
 
     # Переменные окружения БД
-    env_file:
-      - .env
+    env_file: .env
 
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -28,7 +25,7 @@ services:
 
     # Healthcheck: проверяет готовность БД
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mkpstats"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s   # Каждые 10 сек
       timeout: 5s     # Таймаут 5 сек
       retries: 5      # 5 попыток
@@ -43,7 +40,7 @@ services:
   fastapi:
     # Собираем из Dockerfile в текущей папке
     build:
-      context: . # backend/
+      context: ./backend  # backend/
       dockerfile: Dockerfile
 
     container_name: mkpstats_fastapi
@@ -52,8 +49,7 @@ services:
     ports:
       - "8000:8000"
 
-    env_file:
-      - .env
+    env_file: .env
      # Переменные для Alembic/FastAPI
     environment:
       DATABASE_URL_SYNC: ${DATABASE_URL_SYNC}
@@ -61,7 +57,7 @@ services:
 
     # Hot reload: изменения кода → перезапуск
     volumes:
-      - .:/app
+      - ./backend:/app
 
     # Ждем postgres (healthcheck прошел)
     depends_on:
@@ -73,6 +69,20 @@ services:
 
     restart: unless-stopped
 
+ # =========================================
+  # Vue.js Frontend (Production build)
+  # =========================================
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mkpstats_frontend
+    ports:
+      - "3000:80"  # localhost:3000 → nginx:80
+    depends_on:
+      - fastapi
+    restart: unless-stopped
+
 
 
 # =========================================
@@ -80,3 +90,4 @@ services:
 # =========================================
 volumes:
   postgres_data:     # Имя тома (docker volume ls)
+  frontend_node_modules:
